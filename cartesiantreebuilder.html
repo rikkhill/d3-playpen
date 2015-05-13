@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Adding Points to the Cartesian Plane</title>
+    <style>
+
+.axis path, .axis line {
+    fill: none;
+    stroke: #000000;
+    shape-rendering: crispEdges;
+}
+
+    </style>
+  </head>
+
+  <body>
+
+    <script src='./js/d3.min.js'></script>
+    <script>
+
+var height = 500;
+var width = 500;
+var margin = {top: 40, right: 40, left: 40, bottom: 40};
+
+var svg = d3.select('body')
+    .append("svg")
+    .attr("width", 500 + margin.left + margin.right)
+    .attr("height", 500 + margin.top + margin.bottom);
+
+// For visibility
+svg.append('rect')
+    .attr("width", svg.attr("width"))
+    .attr("height", svg.attr("height"))
+    .attr("fill", 'white');
+
+// The for-realsies plane
+var plane = svg.append("g")
+    .attr("id", "plane")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// for visibility
+plane.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "white");
+
+plane.on("click", function(d,i) {
+    var coords = d3.mouse(this);
+    var point = {
+        x: x.invert(coords[0]),
+        y: y.invert(coords[1])
+    };
+    addData(point);
+});
+
+var x = d3.scale.linear().domain([-10, 10]).range([0, width]);
+var y = d3.scale.linear().domain([10, -10]).range([0, width]);
+
+var xAxis = d3.svg.axis().scale(x).orient('bottom').tickValues([
+-8, -6, -4, -2, 2, 4, 6, 8
+]);
+var yAxis = d3.svg.axis().scale(y).orient('left').tickValues([
+-8, -6, -4, -2, 2, 4, 6, 8
+]);
+
+plane.append('g')
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height/2 + ")")
+    .call(xAxis);
+
+plane.append('g')
+    .attr("class", "y axis")
+    .attr("transform", "translate(" + width/2 + ", 0)")
+    .call(yAxis);
+
+var data = [];
+var edges = [];
+
+function nearestPoint(point) {
+
+    var euclid = function(a, b, c, d) {
+        return Math.sqrt(Math.pow(a - c, 2) + Math.pow(b - d, 2) );
+    }
+
+    if (data.length == 0) { return undefined; }
+    return data.reduce(function(a, b) {
+        return euclid(point.x,point.y,a.x,a.y) < euclid(point.x,point.y,b.x,b.y) ?  a : b;
+    });
+}
+
+function addData(point) {
+
+    var parent_node = nearestPoint(point);
+    console.log(parent_node);
+    if (typeof parent_node !== "undefined") {
+        // Add edge
+        edges.push({
+            x1: point.x,
+            y1: point.y,
+            x2: parent_node.x,
+            y2: parent_node.y
+        });
+    }
+
+    data.push(point);
+
+    var lines = plane.selectAll('.edge')
+    .data(edges)
+    .enter().append('line')
+    .attr("class", "edge")
+    .attr("x1", function(d) {return x(d.x1)})
+    .attr("y1", function(d) {return y(d.y1)})
+    .attr("x2", function(d) {return x(d.x2)})
+    .attr("y2", function(d) {return y(d.y2)})
+    .attr("stroke-width", 2)
+    .attr("stroke", "red")
+    .transition().duration(800).attr("stroke", 'black');
+
+    var dots = plane.selectAll('.point')
+    .data(data)
+    .enter().append('circle')
+    .attr("class", "point")
+    .attr("cx", function(d) { return x(d.x) })
+    .attr("cy", function(d) { return y(d.y) })
+    .attr("r", 0)
+    .transition().duration(500).attr("r", 4)
+    .attr("fill", "black");
+
+}
+
+    </script>
+  </body>
+</html>
