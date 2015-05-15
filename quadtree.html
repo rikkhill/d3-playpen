@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Playing with Quadtrees</title>
+    <style>
+
+.axis path, .axis line {
+    fill: none;
+    stroke: #000000;
+    shape-rendering: crispEdges;
+}
+
+.box {
+    fill: blue;
+    stroke: white;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+    fill-opacity: 0.05;
+}
+    </style>
+  </head>
+
+  <body>
+    <h2>Click to populate the box</h2>
+    <script src='./js/d3.min.js'></script>
+    <script>
+
+var height = 500;
+var width = 700;
+var margin = {top: 40, right: 40, left: 40, bottom: 40};
+
+var svg = d3.select('body')
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+// For visibility
+svg.append('rect')
+    .attr("width", svg.attr("width"))
+    .attr("height", svg.attr("height"))
+    .attr("fill", 'white');
+
+// The for-realsies plane
+var plane = svg.append("g")
+    .attr("id", "plane")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// for visibility
+plane.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "white")
+    .attr("stroke", "black");
+
+plane.on("click", function(d,i) {
+    var coords = d3.mouse(this);
+    var point = {
+        x: x.invert(coords[0]),
+        y: y.invert(coords[1])
+    };
+    addData(point);
+});
+
+var x = d3.scale.linear().domain([0, 10]).range([0, width]);
+var y = d3.scale.linear().domain([0, 10]).range([0, height]);
+
+var data = [];
+var tree = d3.geom.quadtree()
+    .extent([[0,0], [10,10]])
+    .x(function(d) { return d.x; }).y(function(d) { return d.y })([]);
+
+function addData(point) {
+    data.push(point);
+    console.log("nearest:", tree.find([point.x, point.y]));
+    tree.add(point);
+    var bounds = [];
+    tree.visit(function(node, x1, y1, x2, y2) {
+        var bound_box = {
+            x1: x1,
+            y1: y1,
+            x2: x2,
+            y2: y2
+        };
+        console.log(bound_box);
+        bounds.push(bound_box);
+    });
+
+    var dots = plane.selectAll('.point')
+    .data(data)
+    .enter().append('circle')
+    .attr("class", "point")
+    .attr("cx", function(d) { return x(d.x) })
+    .attr("cy", function(d) { return y(d.y) })
+    .attr("r", 0)
+    .transition().duration(500).attr("r", 4)
+    .attr("fill", "black");
+
+    plane.selectAll(".box").remove();
+
+    var boxes = plane.selectAll(".box")
+    .data(bounds)
+    .enter().append('rect')
+    .attr('class', 'box')
+    .attr('x', function(d) { return x(d.x1) })
+    .attr('y', function(d) { return y(d.y1) })
+    .attr('width', function(d) { return x(d.x2 - d.x1) })
+    .attr('height', function(d) { return y(d.y2 - d.y1) });
+}
+
+    </script>
+  </body>
+</html>
