@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Electoral Ward Map</title>
+    <style>
+
+    </style>
+  </head>
+
+  <body>
+    <script src='./js/d3.min.js'></script>
+    <script src='./js/topojson.js'></script>
+    <script>
+
+        var colrange = d3.interpolateRgb('#DD2222', '#2222DD');
+        var width = 1160, height = 960;
+
+        var svg = d3.select("body").append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        d3.json("assets/topo_wpc.json", function(error, uk) {
+            if(error) { return console.error(error) };
+
+            var wards = topojson.feature(uk, uk.objects.wpc).features;
+            console.log(wards);
+
+            var projection = d3.geo.albers()
+                .center([0, 55.4])
+                .rotate([4.4, 0])
+                .parallels([50, 60])
+                .scale(4000)
+                .translate([(width / 2) - 300, height / 2]);
+
+            var path = d3.geo.path().projection(projection);
+            svg.selectAll(".wpc")
+                .data(wards).enter()
+                .append("path")
+                .attr("d", path)
+                .attr("fill", function() { return colrange(Math.random())});
+
+        });
+
+    </script>
+  </body>
+</html>
