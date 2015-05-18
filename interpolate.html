@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Colour space interpolation</title>
+  </head>
+
+  <body>
+    <div id='blah'></div>
+    <script src='./js/d3.min.js'></script>
+    <script>
+        irange = function(n) {
+            var range = [];
+            for(var i = 0; i < n; i++) {
+                range.push(i/n);
+            }
+            return range;
+        }
+
+        var steep = d3.interpolateRgb('#aa2222', '#2222aa');
+        var data = irange(20);
+        d3.select('#blah').selectAll('div')
+            .data(data).enter()
+            .append('div')
+            .attr('width', 100)
+            .attr("height", 20)
+            .style("background-color", function(d) {return steep(d)})
+            .html("&nbsp;");
+    </script>
+  </body>
+</html>
