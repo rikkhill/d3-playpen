@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>Stupid Thing</title>
+    <style>
+
+.axis path, .axis line {
+    fill: none;
+    stroke: #000000;
+    shape-rendering: crispEdges;
+}
+
+.box {
+    fill: blue;
+    stroke: white;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+    fill-opacity: 0.05;
+}
+    </style>
+  </head>
+
+  <body>
+    <h2>Put your pointer in the box</h2>
+    <script src='./js/d3.min.js'></script>
+    <script>
+
+var height = 500;
+var width = 700;
+var margin = {top: 40, right: 40, left: 40, bottom: 40};
+
+var svg = d3.select('body')
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+// For visibility
+svg.append('rect')
+    .attr("width", svg.attr("width"))
+    .attr("height", svg.attr("height"))
+    .attr("fill", 'white');
+
+// The for-realsies plane
+var plane = svg.append("g")
+    .attr("id", "plane")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// for visibility
+plane.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "white")
+    .attr("stroke", "black");
+
+var x = d3.scale.linear().domain([0, 10]).range([0, width]);
+var y = d3.scale.linear().domain([0, 10]).range([0, height]);
+
+var ball = plane.append("circle")
+    .attr("id", "ball")
+    .attr("cx", width/2)
+    .attr("cy", height/2)
+    .attr("fill", "red")
+    .attr("r", 4);
+
+plane.on("mousemove", function(d,i) {
+    var coords = d3.mouse(this);
+    var point = {
+        x: x.invert(coords[0]),
+        y: y.invert(coords[1])
+    };
+
+    d3.select("#ball")
+    .transition().duration(500)
+    .attr("cx", x(point.x))
+    .attr("cy", y(point.y));
+});
+
+
+    </script>
+  </body>
+</html>
