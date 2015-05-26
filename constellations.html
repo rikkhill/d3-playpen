@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Playing with Quadtrees</title>
+    <style>
+
+.axis path, .axis line {
+    fill: none;
+    stroke: #000000;
+    shape-rendering: crispEdges;
+}
+
+.box {
+    fill: blue;
+    stroke: white;
+    stroke-width: 1px;
+    shape-rendering: crispEdges;
+    fill-opacity: 0.05;
+}
+
+.star {
+    fill: white;
+    shape-rendering: geometricPrecision;
+    stroke-width: 0px;
+}
+    </style>
+  </head>
+
+  <body>
+    <h2>Click to populate the box</h2>
+    <script src='./js/d3.min.js'></script>
+    <script>
+
+var height = 500;
+var width = 700;
+var margin = {top: 40, right: 40, left: 40, bottom: 40};
+
+var svg = d3.select('body')
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+// For visibility
+svg.append('rect')
+    .attr("width", svg.attr("width"))
+    .attr("height", svg.attr("height"))
+    .attr("fill", 'white');
+
+// The for-realsies plane
+var plane = svg.append("g")
+    .attr("id", "plane")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// for visibility
+plane.append("rect")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "black")
+    .attr("stroke", "black");
+
+plane.on("click", function(d,i) {
+    var coords = d3.mouse(this);
+    var point = {
+        x: x.invert(coords[0]),
+        y: y.invert(coords[1]),
+        r: 1
+    };
+    addData(point);
+});
+
+var x = d3.scale.linear().domain([0, 10]).range([0, width]);
+var y = d3.scale.linear().domain([0, 10]).range([0, height]);
+
+var data = [];
+
+function addData(point) {
+    data.push(point);
+
+    var dots = plane.selectAll('.star')
+    .data(data)
+    .enter().append('circle')
+    .attr("class", "star")
+    .attr("cx", function(d) { return x(d.x) })
+    .attr("cy", function(d) { return y(d.y) })
+    .attr("r", 0)
+    .transition().duration(500).attr("r", function(d) {return d.r});
+}
+
+// Random integer between a and b
+function randomReal(a,b) {
+    return (Math.random() * (b - a)) + a;
+}
+
+// add n stars
+var n = 10;
+for (var i = 0; i < n; i++) {
+    addData({
+        x: randomReal(0,10),
+        y: randomReal(0,10),
+        r: Math.ceil(randomReal(0,3))
+    })
+}
+
+// Instantiate centroids
+var centroids = [];
+for (var i = 0; i < n/10; i++) {
+    centroids.push({
+        x: randomReal(0,10),
+        y: randomReal(0,10),
+        nodes: []
+    });
+}
+
+var treeFactory = d3.geom.quadtree().extent([[0, 10], [width, height]])
+    .x(function(d) {return d.x;})
+    .y(function(d) {return d.y;});
+
+var littleDiff = 10; // Arbitrarily high number
+
+while(littleDiff > 0) {
+    centroids.forEach( function (c) { c.nodes = []; } );
+    var tree = treeFactory(centroids);
+    data.forEach( function(c) {
+        var nearest = tree.find([c.x, c.y]);
+        nearest.nodes.push(c);
+    });
+
+    var bigDiff = 0;
+    centroids.forEach( function (c) {
+        var new_x = c.nodes.reduce( function( a, b ) {
+            return { x: (a.x + b.x) / 2 };
+        }).x;
+
+        var new_y = c.nodes.reduce( function( a, b ) {
+            return { y: (a.y + b.y) / 2};
+        }).y;
+
+        var diff = Math.sqrt(Math.pow(new_x - c.x, 2) + Math.pow(new_y - c.y, 2));
+        if(diff > bigDiff) {
+            bigDiff = diff;
+        }
+
+        c.x = new_x;
+        c.y = new_y;
+    });
+
+    if(bigDiff < littleDiff) {
+        littleDiff = bigDiff;
+    }
+}
+
+// identify constellations
+centroids.forEach( function(c) {
+    plane.selectAll("line")
+        .data(c.nodes)
+        .enter().append("line")
+        .attr("x1", x(c.x))
+        .attr("y1", y(c.y))
+        .attr("x2", function(d) { return x(d.x) })
+        .attr("y2", function(d) { return y(d.y) })
+        .attr("stroke", "red")
+        .attr("stroke-width", 2);
+});
+
+
+
+    </script>
+  </body>
+</html>
