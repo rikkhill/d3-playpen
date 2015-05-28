@@ -103,7 +103,7 @@ for (var i = 0; i < n; i++) {
 
 // Instantiate centroids
 var centroids = [];
-for (var i = 0; i < n/10; i++) {
+for (var i = 0; i < n/5; i++) {
     centroids.push({
         x: randomReal(0,10),
         y: randomReal(0,10),
@@ -159,7 +159,7 @@ centroids.forEach( function(c) {
         .attr("x2", function(d) { return x(d.x) })
         .attr("y2", function(d) { return y(d.y) })
         .attr("stroke", "red")
-        .attr("stroke-width", 2);
+        .attr("stroke-width", 3);
 });
 
 
