@@ -95,7 +95,8 @@ function bivariateGaussian(mu, sig) {
 
     var var1 = Math.sqrt(sig[0][0]);
     var var2 = Math.sqrt(sig[1][1]);
-    var cd1 = sig[0][1] / (var1)
+    var cov = sig[0][1];
+    var cd1 = sig[0][1] / (var1);
     var rho = sig[0][1] / (var1 * var2);
 
     // Cholesky decomposition
@@ -106,16 +107,20 @@ function bivariateGaussian(mu, sig) {
     var evecs = eigs.E.x;
     // Need to know the biggest axis of variance
     var bigAxis = var1 > var2 ? 0 : 1;
-    console.log("variances:", var1, var2);
-    console.log("big axis: ", bigAxis);
+    var smallAxis = Math.abs(bigAxis - 1);
     var angle = Math.atan2(evecs[bigAxis][1], evecs[bigAxis][0]);
-    if (angle < 0) { angle = angle + 2*Math.PI; }
+    if (angle < 0) { angle = angle + 2*Math.PI }
 
+    var alternativeAngle = 0.5 * Math.atan(2 * cov / (sig[bigAxis][bigAxis] - sig[smallAxis][smallAxis]));
+    if (alternativeAngle < 0) { alternativeAngle = alternativeAngle + 2*Math.PI  }
+
+    combiAngle = -Math.atan2(Math.sin(angle), Math.cos(alternativeAngle));
+
+    console.log("axis order: ", bigAxis, smallAxis);
     console.log("angle: ", angle * 180 / Math.PI);
-
-console.log("eigenvalues: ", evals);
-console.log("eigenvectors: ", evecs[0], evecs[1]);
-
+    console.log("alternative angle: ", alternativeAngle * 180 / Math.PI);
+    console.log("rho:", rho);
+console.log("vars", var1, var2);
     return {
         mu: mu,
         sig: sig,
@@ -124,7 +129,9 @@ console.log("eigenvectors: ", evecs[0], evecs[1]);
         evals: eigs.lambda.x,
         evecs: evecs,
         angle: angle,
-        axisOrder: [bigAxis, Math.abs(bigAxis - 1)],
+        angle2: alternativeAngle,
+        angle3: combiAngle,
+        axisOrder: [bigAxis, smallAxis],
         sample: function() {
             var stdNorm = d3.random.normal(0,1);
             var x = [stdNorm(), stdNorm()];
@@ -144,10 +151,10 @@ var rho = Math.random() * 2 - 1;
 var cov = rho * Math.sqrt(sig1) * Math.sqrt(sig2);
 
 
-bvg = bivariateGaussian([mu1, mu2],[[sig1,cov],[cov, sig2]]);
+bvg = bivariateGaussian([4,4],[[sig1,cov],[cov, sig2]]);
 
 
-//bvg = bivariateGaussian([2, 1], [[4, -1],[-1, 3]]);
+//bvg = bivariateGaussian([0, 0], [[1.2, -1],[-1, 1.2]]);
 
 // A taste of ES6
 for (var i in Array.from(Array(100).keys())) {
@@ -179,6 +186,35 @@ var gaussian = plane.append('ellipse')
         var h = y(bvg.mu[1]);
         return "rotate("+((bvg.angle) * 180 / Math.PI)+","+w+","+h+")";
     });
+
+var gaussian2 = plane.append('ellipse')
+    .attr("class", "gaussian")
+    .attr("cx", x(bvg.mu[0]))
+    .attr("cy", y(bvg.mu[1]))
+    .attr("rx", scalar * 2 * Math.sqrt(6 * bvg.evals[bvg.axisOrder[1]]))
+    .attr("ry", scalar * 2 * Math.sqrt(6 * bvg.evals[bvg.axisOrder[0]]))
+    .attr("fill", 'blue')
+    .attr("opacity", 0.4)
+    .attr("transform", function(d) {
+        var w = x(bvg.mu[0]);
+        var h = y(bvg.mu[1]);
+        return "rotate("+((bvg.angle2) * 180 / Math.PI)+","+w+","+h+")";
+    });
+
+var gaussian3 = plane.append('ellipse')
+    .attr("class", "gaussian")
+    .attr("cx", x(bvg.mu[0]))
+    .attr("cy", y(bvg.mu[1]))
+    .attr("rx", scalar * 2 * Math.sqrt(6 * bvg.evals[bvg.axisOrder[0]]))
+    .attr("ry", scalar * 2 * Math.sqrt(6 * bvg.evals[bvg.axisOrder[1]]))
+    .attr("fill", 'green')
+    .attr("opacity", 0.4)
+    .attr("transform", function(d) {
+        var w = x(bvg.mu[0]);
+        var h = y(bvg.mu[1]);
+        return "rotate("+((bvg.angle3) * 180 / Math.PI)+","+w+","+h+")";
+    });
+
 
     </script>
   </body>
